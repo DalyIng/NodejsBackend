@@ -20,20 +20,16 @@ var userSchema = new mongoose.Schema({
   saltSecret: String,
   friends: [{ fullName: String }],
   age: {
-    type: Number,
-    required: "Age can't be empty"
+    type: Number
   },
   famille: {
-    type: String,
-    required: "Family can't be empty"
+    type: String
   },
   race: {
-    type: String,
-    required: "Race can't be empty"
+    type: String
   },
   nourriture: {
-    type: String,
-    required: "Food can't be empty"
+    type: String
   }
 });
 

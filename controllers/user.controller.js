@@ -91,10 +91,119 @@ module.exports.modifyUser = (req, res, next) => {
   );
 };
 
+module.exports.addfriend = (req, res, next) => {
+  var friend = { fullName: req.body.fullName };
+  let newId;
+  //Lors de l'ajout d'un ami inexistant dans la base, on crée cet extraterrestre
+  User.findById(req.params.id, function(err, senderUser) {
+    if (err) return res.status(500).send("Error on the server.");
+    if (!senderUser) return res.status(404).send("You are not authorized.");
+    var exist = senderUser.friends.filter(function(element) {
+      return element.fullName === friend.fullName;
+    });
+    if (exist.length) {
+      return res.status(200).send("You are freinds already.");
+    } else {
+      User.findOne({ fullName: req.body.fullName }, function(err, searchUser) {
+        if (err) return res.status(500).send("Error on the server.");
+        if (!searchUser) {
+          console.log("Alien not found, we'll create a new one");
+          var user = new User();
+          user.fullName = req.body.fullName;
+          user.email = req.body.email;
+          user.password = req.body.password;
+          user.save((err, newUser) => {
+            if (!err) {
+              console.log(senderUser.name);
+              console.log(newUser._id);
+              newId = newUser._id;
+              let newFriend = { fullName: senderUser.fullName };
+              User.findByIdAndUpdate(
+                newUser._id,
+                { $push: { friends: newFriend } },
+                function(err, friendadded) {
+                  if (err) {
+                    console.log(err);
+                    return res
+                      .status(500)
+                      .send("There was a problem updating the user.");
+                  }
+                  if (friendadded) {
+                    console.log("New Freind Added");
+                  }
+                }
+              );
+            } else {
+              if (err.code == 11000)
+                res.status(422).send(["Duplicate email adrress found."]);
+              else return next(err);
+            }
+          });
+
+          User.findByIdAndUpdate(
+            req.params.id,
+            { $push: { friends: friend } },
+            { new: true },
+            function(err, user) {
+              if (err) {
+                console.log(err);
+                return res
+                  .status(500)
+                  .send("There was a problem updating the user.");
+              }
+              return res.status(200).json({
+                status: true,
+                user: _.pick(user, [
+                  "_id",
+                  "fullName",
+                  "email",
+                  "friends",
+                  "race",
+                  "age",
+                  "famille",
+                  "nourriture"
+                ])
+              });
+            }
+          );
+          //res.status(200).send("new alien created");
+        } else {
+          User.findByIdAndUpdate(
+            req.params.id,
+            { $push: { friends: friend } },
+            { new: true },
+            function(err, user) {
+              if (err) {
+                console.log(err);
+                return res
+                  .status(500)
+                  .send("There was a problem updating the user.");
+              }
+              return res.status(200).json({
+                status: true,
+                user: _.pick(user, [
+                  "_id",
+                  "fullName",
+                  "email",
+                  "friends",
+                  "race",
+                  "age",
+                  "famille",
+                  "nourriture"
+                ])
+              });
+            }
+          );
+        }
+      });
+    }
+  });
+};
+
 // UPDATES Freinds List DELETE
 // Added VerifyToken middleware to make sure only an authenticated user can put to this route
 
-module.exports.addfriend = (req, res, next) => {
+/*module.exports.addfriend = (req, res, next) => {
   var friend = { fullName: req.body.fullName };
   User.findOne({ fullName: req.body.fullName }, (err, user) => {
     if (err) return res.status(500).send("Error on the server.");
@@ -128,7 +237,7 @@ module.exports.addfriend = (req, res, next) => {
       );
     }
   });
-};
+};*/
 
 module.exports.deletefriend = (req, res, next) => {
   var friend = { fullName: req.body.fullName };
@@ -253,3 +362,42 @@ module.exports.deletefriend = (req, res, next) => {
     }
   });
 });*/
+
+/**
+ module.exports.addfriend = (req, res, next) => {
+  var friend = { fullName: req.body.fullName };
+  User.findOne({ fullName: req.body.fullName }, (err, user) => {
+    if (err) return res.status(500).send("Error on the server.");
+    if (!user) return res.status(404).send("No user found.");
+    else {
+      User.findByIdAndUpdate(
+        req.params.id,
+        { $push: { friends: friend } },
+        { new: true },
+        (err, user) => {
+          if (err) {
+            console.log(err);
+            return res
+              .status(500)
+              .send("There was a problem updating the user.");
+          }
+          return res.status(200).json({
+            status: true,
+            user: _.pick(user, [
+              "_id",
+              "fullName",
+              "email",
+              "friends",
+              "race",
+              "age",
+              "famille",
+              "nourriture"
+            ])
+          });
+        }
+      );
+    }
+  });
+};
+ * 
+ */
